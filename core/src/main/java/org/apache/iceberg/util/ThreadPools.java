@@ -197,11 +197,14 @@ public class ThreadPools {
       try {
         shutdownHook.setName("DelayedShutdownHook-iceberg");
       } catch (SecurityException e) {
-        // OK if we can't set the name in this environment.
         LOG.warn("Cannot set thread name for the shutdown hook", e);
       }
 
-      Runtime.getRuntime().addShutdownHook(shutdownHook);
+      try {
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
+      } catch (SecurityException e) {
+        LOG.warn("Cannot install a shutdown hook for thread pools clean up", e);
+      }
     }
   }
 
@@ -215,7 +218,11 @@ public class ThreadPools {
   @SuppressWarnings("ShutdownHook")
   public static void removeShutdownHook() {
     if (shutdownHook != null) {
-      Runtime.getRuntime().removeShutdownHook(shutdownHook);
+      try {
+        Runtime.getRuntime().removeShutdownHook(shutdownHook);
+      } catch (SecurityException e) {
+        LOG.warn("Cannot remove the shutdown hook for thread pools clean up", e);
+      }
       shutdownHook = null;
     }
   }
