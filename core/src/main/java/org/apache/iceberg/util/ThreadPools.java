@@ -59,7 +59,7 @@ public class ThreadPools {
   private static final ExecutorService DELETE_WORKER_POOL =
       newExitingWorkerPool("iceberg-delete-worker-pool", DELETE_WORKER_THREAD_POOL_SIZE);
 
-  private static final int SHUTDOWN_TIMEOUT_SECONDS = 120;
+  private static final Duration SHUTDOWN_TIMEOUT = Duration.ofSeconds(120);
 
   private static Thread shutdownHook;
 
@@ -156,23 +156,28 @@ public class ThreadPools {
    * Force manual shutdown of the thread pools created via the {@link #newExitingWorkerPool(String,
    * int)}.
    */
-  public static void shutdownStartedThreadPools() {
+  public static void shutdownThreadPools() {
+    removeShutdownHook();
     long startTime = System.nanoTime();
     ExecutorService item;
-    Queue<ExecutorService> invoked = new ArrayDeque<>();
+    Queue<ExecutorService> pendingShutdown = new ArrayDeque<>();
     while ((item = THREAD_POOLS_TO_SHUTDOWN.poll()) != null) {
       item.shutdown();
-      invoked.add(item);
+      pendingShutdown.add(item);
     }
-    while ((item = invoked.poll()) != null) {
+    while ((item = pendingShutdown.poll()) != null) {
       long timeElapsed = System.nanoTime() - startTime;
-      long remainingTime = SHUTDOWN_TIMEOUT_SECONDS * 1_000_000_000L - timeElapsed;
+      long remainingTime = SHUTDOWN_TIMEOUT.toNanos() - timeElapsed;
       if (remainingTime > 0) {
         try {
-          item.awaitTermination(remainingTime, TimeUnit.NANOSECONDS);
+          if (!item.awaitTermination(remainingTime, TimeUnit.NANOSECONDS)) {
+            item.shutdownNow();
+          }
         } catch (InterruptedException ignored) {
           // We're shutting down anyway, so just ignore.
         }
+      } else {
+        item.shutdownNow();
       }
     }
   }
@@ -190,7 +195,8 @@ public class ThreadPools {
                   new Runnable() {
                     @Override
                     public void run() {
-                      shutdownStartedThreadPools();
+                      shutdownHook = null;
+                      shutdownThreadPools();
                     }
                   });
 
@@ -212,8 +218,7 @@ public class ThreadPools {
    * Stop the shutdown hook for the thread pools created via the {@link
    * #newExitingWorkerPool(String, int)}.
    *
-   * <p>Thread pools can still be stopped manually via the {@link #shutdownStartedThreadPools()}
-   * method.
+   * <p>Thread pools can still be stopped manually via the {@link #shutdownThreadPools()} method.
    */
   @SuppressWarnings("ShutdownHook")
   public static void removeShutdownHook() {
