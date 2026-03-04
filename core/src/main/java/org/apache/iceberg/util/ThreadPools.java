@@ -161,7 +161,7 @@ public class ThreadPools {
    * #newExitingWorkerPool(String, int)}.
    */
   @SuppressWarnings("ShutdownHook")
-  private static synchronized void initShutdownHook() {
+  static synchronized void initShutdownHook() {
     if (shutdownHook == null) {
       shutdownHook =
           Executors.defaultThreadFactory()
@@ -204,6 +204,15 @@ public class ThreadPools {
       }
       shutdownHook = null;
     }
+  }
+
+  /**
+   * Check if the shutdown hook has been registered.
+   *
+   * @return true if the shutdown hook is registered, false otherwise
+   */
+  public static synchronized boolean isShutdownHookRegistered() {
+    return shutdownHook != null;
   }
 
   /** Creates a fixed-size thread pool that uses daemon threads. */
