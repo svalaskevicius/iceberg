@@ -152,8 +152,8 @@ public class ThreadPools {
    * before, as this method will stop thread pools required for normal library workflows.
    */
   public static void shutdownThreadPools() {
-    removeShutdownHook();
     THREAD_POOL_MANAGER.shutdownAll();
+    removeShutdownHook();
   }
 
   /**
