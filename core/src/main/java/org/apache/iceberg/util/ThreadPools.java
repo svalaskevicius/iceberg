@@ -288,7 +288,6 @@ public class ThreadPools {
         long timeElapsed = System.nanoTime() - startTime;
         long remainingTime = item.timeout().toNanos() - timeElapsed;
         if (remainingTime > 0) {
-
           try {
             if (!item.service.awaitTermination(remainingTime, TimeUnit.NANOSECONDS)) {
               item.service().shutdownNow();
@@ -296,7 +295,6 @@ public class ThreadPools {
           } catch (InterruptedException e) {
             LOG.warn("Interrupted while shutting down, ignoring", e);
           }
-
         } else {
           item.service().shutdownNow();
         }
