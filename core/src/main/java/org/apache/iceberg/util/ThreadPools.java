@@ -17,12 +17,15 @@
  * under the License.
  */
 package org.apache.iceberg.util;
+
+import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
-import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.apache.iceberg.SystemConfigs;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -57,7 +60,6 @@ public class ThreadPools {
 
   private static final ExecutorService DELETE_WORKER_POOL =
       newExitingWorkerPool("iceberg-delete-worker-pool", DELETE_WORKER_THREAD_POOL_SIZE);
-
 
   private static Thread shutdownHook;
 
